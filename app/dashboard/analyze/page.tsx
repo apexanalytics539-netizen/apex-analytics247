@@ -385,6 +385,57 @@ const PredictionDisplay = ({
 }
 
 // ============================================
+// COMPONENT: Voice Wave Animation
+// A Jarvis/HUD-style animated indicator shown while audio is playing:
+// a pulsing core ring surrounded by radiating rings, plus a small
+// bar-equalizer beneath it. Pure CSS animation, no extra libraries.
+// ============================================
+const VoiceWaveAnimation = () => {
+  return (
+    <div className="relative w-5 h-5 flex items-center justify-center">
+      {/* Radiating outer rings */}
+      <span className="absolute inset-0 rounded-full border border-cyan-400/60 animate-[voicering_1.6s_ease-out_infinite]" />
+      <span className="absolute inset-0 rounded-full border border-cyan-400/40 animate-[voicering_1.6s_ease-out_infinite_0.4s]" />
+      <span className="absolute inset-0 rounded-full border border-cyan-400/20 animate-[voicering_1.6s_ease-out_infinite_0.8s]" />
+      {/* Core */}
+      <span className="relative w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_2px_rgba(34,211,238,0.6)]" />
+      <style jsx>{`
+        @keyframes voicering {
+          0% { transform: scale(0.4); opacity: 0.9; }
+          100% { transform: scale(1.8); opacity: 0; }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+// A small equalizer-style bar animation, shown alongside VoiceWaveAnimation
+// for a fuller "AI is speaking" HUD effect.
+const VoiceEqualizerBars = () => {
+  const bars = [0, 1, 2, 3, 4]
+  return (
+    <div className="flex items-end gap-[2px] h-3">
+      {bars.map((i) => (
+        <span
+          key={i}
+          className="w-[2px] bg-cyan-400 rounded-full"
+          style={{
+            animation: `voicebar 0.9s ease-in-out infinite`,
+            animationDelay: `${i * 0.12}s`,
+          }}
+        />
+      ))}
+      <style jsx>{`
+        @keyframes voicebar {
+          0%, 100% { height: 3px; }
+          50% { height: 12px; }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+// ============================================
 // MAIN COMPONENT: AnalyzePage
 // ============================================
 export default function AnalyzePage() {
@@ -878,9 +929,9 @@ export default function AnalyzePage() {
                 className="text-gray-400 hover:text-emerald-400 transition"
               >
                 {isPlaying[index] ? (
-                  <div className="relative">
-                    <VolumeX className="w-4 h-4 animate-pulse text-emerald-400" />
-                    <span className="absolute inset-[-4px] rounded-full border-2 border-emerald-400/50 animate-ping" />
+                  <div className="flex items-center gap-1.5">
+                    <VoiceWaveAnimation />
+                    <VoiceEqualizerBars />
                   </div>
                 ) : (
                   <Volume2 className="w-4 h-4" />
