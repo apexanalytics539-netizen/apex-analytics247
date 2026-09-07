@@ -4,11 +4,15 @@ import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Loader2, RefreshCw, Archive, Eye, EyeOff } from 'lucide-react'
 import AdminShell, { AdminSection } from '@/components/admin/AdminShell'
+import AdminGuard from '@/components/admin/AdminGuard'
 import ComposeEventForm from '@/components/admin/ComposeEventForm'
+import UsersPanel from '@/components/admin/UserPanel'
+import AIPerformanceAnalyze from '@/components/admin/AIPerformanceAnalyze'
+import type { ComposeDraft } from '@/lib/aiShipping'
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
 
-export default function AdminDashboard() {
+function AdminDashboardContent() {
   const [section, setSection] = useState<AdminSection>('compose')
   const [leagues, setLeagues] = useState<any[]>([])
   const [fixtures, setFixtures] = useState<any[]>([])
@@ -16,6 +20,12 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
+  const [composeDraft, setComposeDraft] = useState<ComposeDraft | null>(null)
+
+  const handleShipToCompose = (draft: ComposeDraft) => {
+    setComposeDraft(draft)
+    setSection('compose')
+  }
 
   useEffect(() => {
     loadData()
@@ -86,7 +96,7 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-[#0a0c12]">
+      <div className="flex items-center justify-center min-h-[400px] bg-[#0a0c12]">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
       </div>
     )
@@ -94,21 +104,25 @@ export default function AdminDashboard() {
 
   return (
     <AdminShell active={section} onNavigate={setSection}>
-      {section === 'compose' && <ComposeEventForm />}
+      {/* ✅ SECTION: Compose Event */}
+      {section === 'compose' && (
+        <ComposeEventForm initialDraft={composeDraft} onDraftConsumed={() => setComposeDraft(null)} />
+      )}
 
+      {/* ✅ SECTION: Leagues - Responsive Grid */}
       {section === 'leagues' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
           {leagues.length > 0 ? (
             leagues.map((league) => (
               <div key={league.id} className="bg-[#12141c] border border-white/5 rounded-xl p-4 flex justify-between items-center">
-                <div>
-                  <h3 className="font-semibold text-white text-sm">{league.league_name}</h3>
-                  <p className="text-xs text-slate-500">{league.country}</p>
-                  <p className="text-[11px] text-slate-600 mt-0.5">{league.sport_type}</p>
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-white text-sm truncate">{league.league_name}</h3>
+                  <p className="text-xs text-slate-500 truncate">{league.country}</p>
+                  <p className="text-[11px] text-slate-600 mt-0.5 truncate">{league.sport_type}</p>
                 </div>
                 <button
                   onClick={() => toggleLeague(league.id, league.is_active)}
-                  className={`relative w-10 h-5 rounded-full transition ${league.is_active ? 'bg-indigo-500' : 'bg-slate-700'}`}
+                  className={`relative w-10 h-5 rounded-full transition flex-shrink-0 ml-2 ${league.is_active ? 'bg-indigo-500' : 'bg-slate-700'}`}
                 >
                   <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${league.is_active ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </button>
@@ -122,14 +136,17 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* ✅ SECTION: Fixtures - Responsive Table */}
       {section === 'fixtures' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs text-slate-500">
-              <Archive className="w-3.5 h-3.5" />
-              {archivedCount} fixture{archivedCount === 1 ? '' : 's'} older than 7 days hidden
+              <Archive className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="truncate">
+                {archivedCount} fixture{archivedCount === 1 ? '' : 's'} older than 7 days hidden
+              </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => setShowArchived((s) => !s)}
                 className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 border border-white/10 px-3 py-1.5 rounded-lg transition"
@@ -148,10 +165,11 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="bg-[#12141c] border border-white/5 rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
+          {/* ✅ SCROLLABLE TABLE */}
+          <div className="bg-[#12141c] border border-white/5 rounded-xl overflow-x-auto">
+            <table className="w-full text-xs sm:text-sm min-w-[500px]">
               <thead>
-                <tr className="bg-white/[0.02] text-left text-[11px] uppercase tracking-wider text-slate-500">
+                <tr className="bg-white/[0.02] text-left text-[10px] sm:text-[11px] uppercase tracking-wider text-slate-500">
                   <th className="p-3">Match</th>
                   <th className="p-3">League</th>
                   <th className="p-3">Time</th>
@@ -164,19 +182,17 @@ export default function AdminDashboard() {
                     const isArchived = fixture.match_time && new Date(fixture.match_time).getTime() < Date.now() - SEVEN_DAYS_MS
                     return (
                       <tr key={fixture.id} className={`border-t border-white/5 ${isArchived ? 'opacity-50' : ''}`}>
-                        <td className="p-3 text-slate-200">{fixture.home_team} vs {fixture.away_team}</td>
-                        <td className="p-3 text-slate-400">{fixture.league_name}</td>
-                        <td className="p-3 text-slate-400">{fixture.match_time ? new Date(fixture.match_time).toLocaleString() : 'TBD'}</td>
+                        <td className="p-3 text-slate-200 whitespace-nowrap">{fixture.home_team} vs {fixture.away_team}</td>
+                        <td className="p-3 text-slate-400 whitespace-nowrap">{fixture.league_name}</td>
+                        <td className="p-3 text-slate-400 whitespace-nowrap">{fixture.match_time ? new Date(fixture.match_time).toLocaleString() : 'TBD'}</td>
                         <td className="p-3">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[11px] font-medium ${
-                              fixture.status === 'ANALYZED'
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                : fixture.status === 'PENDING'
-                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                                : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
-                            }`}
-                          >
+                          <span className={`px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-medium whitespace-nowrap ${
+                            fixture.status === 'ANALYZED'
+                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              : fixture.status === 'PENDING'
+                              ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                              : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
+                          }`}>
                             {fixture.status || 'UNKNOWN'}
                           </span>
                         </td>
@@ -196,40 +212,53 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* ✅ SECTION: AI - Responsive Grid */}
       {section === 'ai' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Object.entries(
-            aiStats.reduce((acc: any, curr: any) => {
-              acc[curr.ai_provider] = acc[curr.ai_provider] || []
-              acc[curr.ai_provider].push(curr.primary_confidence)
-              return acc
-            }, {})
-          ).length > 0 ? (
-            Object.entries(
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            {Object.entries(
               aiStats.reduce((acc: any, curr: any) => {
                 acc[curr.ai_provider] = acc[curr.ai_provider] || []
                 acc[curr.ai_provider].push(curr.primary_confidence)
                 return acc
               }, {})
-            ).map(([provider, confidences]: [string, any]) => (
-              <div key={provider} className="bg-[#12141c] border border-white/5 rounded-xl p-4">
-                <h3 className="font-semibold text-white text-sm">{provider}</h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  Average Confidence: <span className="text-indigo-300 font-mono">{Math.round(confidences.reduce((a: number, b: number) => a + b, 0) / confidences.length)}%</span>
-                </p>
-                <p className="text-xs text-slate-500">Total Picks: {confidences.length}</p>
+            ).length > 0 ? (
+              Object.entries(
+                aiStats.reduce((acc: any, curr: any) => {
+                  acc[curr.ai_provider] = acc[curr.ai_provider] || []
+                  acc[curr.ai_provider].push(curr.primary_confidence)
+                  return acc
+                }, {})
+              ).map(([provider, confidences]: [string, any]) => (
+                <div key={provider} className="bg-[#12141c] border border-white/5 rounded-xl p-4">
+                  <h3 className="font-semibold text-white text-sm">{provider}</h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Average Confidence: <span className="text-indigo-300 font-mono">{Math.round(confidences.reduce((a: number, b: number) => a + b, 0) / confidences.length)}%</span>
+                  </p>
+                  <p className="text-xs text-slate-500">Total Picks: {confidences.length}</p>
+                </div>
+              ))
+            ) : (
+              <div className="col-span-full text-center text-slate-500 py-12 border border-dashed border-white/10 rounded-xl">
+                No AI predictions yet.
               </div>
-            ))
-          ) : (
-            <div className="col-span-full text-center text-slate-500 py-12 border border-dashed border-white/10 rounded-xl">
-              No AI predictions yet.
-            </div>
-          )}
-          <div className="col-span-full text-xs text-slate-600 border-t border-white/5 pt-4 mt-2">
-            The full Analyze &amp; Ship workspace (replicating the user-facing Analyze AI chat, with "Ship to Dashboard" / "Ship to Compose Event" actions) lands here next.
+            )}
           </div>
+
+          <AIPerformanceAnalyze onShipToCompose={handleShipToCompose} />
         </div>
       )}
+
+      {/* ✅ SECTION: Users */}
+      {section === 'users' && <UsersPanel />}
     </AdminShell>
+  )
+}
+
+export default function AdminDashboard() {
+  return (
+    <AdminGuard>
+      <AdminDashboardContent />
+    </AdminGuard>
   )
 }

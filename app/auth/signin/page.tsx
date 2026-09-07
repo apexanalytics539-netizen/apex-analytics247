@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2, Mail, Lock, ArrowRight } from 'lucide-react'
 
+// ✅ Admin email
+const ADMIN_EMAIL = 'apexanalytics539@gmail.com'
+
 export default function SignIn() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -27,7 +30,12 @@ export default function SignIn() {
       if (error) throw error
 
       if (data.user) {
-        router.push('/dashboard')
+        // ✅ CHECK: Is this the admin?
+        if (data.user.email === ADMIN_EMAIL) {
+          router.push('/admin') // ✅ Admin goes to admin panel
+        } else {
+          router.push('/dashboard') // ✅ Regular user goes to dashboard
+        }
       }
     } catch (error: any) {
       setError(error.message)

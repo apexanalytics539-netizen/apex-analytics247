@@ -1,80 +1,65 @@
-'use client'
+'use client';
 
-import { PenSquare, Trophy, CalendarClock, BrainCircuit, ShieldCheck, Users } from 'lucide-react'
+import { ReactNode } from 'react';
+import { 
+  LayoutDashboard, 
+  PlusCircle, 
+  Trophy, 
+  Calendar, 
+  BrainCircuit, 
+  Users,
+  Settings
+} from 'lucide-react';
 
-export type AdminSection = 'compose' | 'leagues' | 'fixtures' | 'ai' | 'users'
+export type AdminSection = 'compose' | 'leagues' | 'fixtures' | 'ai' | 'users' | 'bots' | 'approvals' | 'receipts' | 'settings';
 
-const NAV_ITEMS: { id: AdminSection; label: string; icon: any; description: string }[] = [
-  { id: 'compose', label: 'Compose Event', icon: PenSquare, description: 'Manually publish a fixture & pick' },
-  { id: 'leagues', label: 'League Control', icon: Trophy, description: 'Enable or disable leagues' },
-  { id: 'fixtures', label: 'Match Queue', icon: CalendarClock, description: 'Fixtures awaiting or in analysis' },
-  { id: 'ai', label: 'AI Performance', icon: BrainCircuit, description: 'Model accuracy & analysis tools' },
-  { id: 'users', label: 'Users', icon: Users, description: 'Manage accounts & admin access' },
-]
+interface AdminShellProps {
+  children: ReactNode;
+  active: AdminSection;
+  onNavigate: (section: AdminSection) => void;
+}
 
-export default function AdminShell({
-  active,
-  onNavigate,
-  children,
-}: {
-  active: AdminSection
-  onNavigate: (section: AdminSection) => void
-  children: React.ReactNode
-}) {
-  const activeItem = NAV_ITEMS.find((i) => i.id === active)
+const navItems: { id: AdminSection; label: string; icon: any }[] = [
+  { id: 'compose', label: 'Compose', icon: PlusCircle },
+  { id: 'leagues', label: 'Leagues', icon: Trophy },
+  { id: 'fixtures', label: 'Fixtures', icon: Calendar },
+  { id: 'ai', label: 'AI Analysis', icon: BrainCircuit },
+  { id: 'users', label: 'Users', icon: Users },
+  { id: 'settings', label: 'Settings', icon: Settings },
+];
 
+export default function AdminShell({ children, active, onNavigate }: AdminShellProps) {
   return (
-    <div className="min-h-screen bg-[#0a0c12] text-slate-200 flex">
-      {/* SIDEBAR */}
-      <aside className="w-64 flex-shrink-0 bg-[#0d0f16] border-r border-white/5 flex flex-col">
-        <div className="px-5 py-6 border-b border-white/5 flex items-center gap-2">
-          <ShieldCheck className="w-5 h-5 text-indigo-400" />
-          <div>
-            <div className="text-sm font-bold text-white leading-none">Apex Analytics</div>
-            <div className="text-[10px] text-slate-500 mt-1">Admin Panel</div>
-          </div>
-        </div>
-
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon
-            const isActive = item.id === active
+    <div className="w-full">
+      {/* ✅ Responsive Navigation Tabs (Horizontal scroll on mobile) */}
+      <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0 mb-4 sm:mb-6">
+        <div className="flex gap-1 sm:gap-2 min-w-max pb-2">
+          {navItems.map((item) => {
+            const isActive = active === item.id;
             return (
               <button
                 key={item.id}
                 onClick={() => onNavigate(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
-                  isActive
-                    ? 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent'
-                }`}
+                className={`
+                  flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition whitespace-nowrap
+                  ${isActive 
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                    : 'text-[#8e96a3] hover:text-white hover:bg-white/5'
+                  }
+                `}
               >
-                <Icon className="w-4 h-4 flex-shrink-0" />
+                <item.icon className="w-4 h-4" />
                 {item.label}
               </button>
-            )
+            );
           })}
-        </nav>
-
-        <div className="px-5 py-4 border-t border-white/5 text-[10px] text-slate-600">
-          Internal tool &middot; not visible to end users
         </div>
-      </aside>
+      </div>
 
-      {/* MAIN */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-b border-white/5 flex items-center justify-between px-8 flex-shrink-0">
-          <div>
-            <div className="text-[11px] text-slate-500 font-mono">Admin / {activeItem?.label}</div>
-            <h1 className="text-lg font-bold text-white">{activeItem?.label}</h1>
-          </div>
-          <p className="text-xs text-slate-500 max-w-xs text-right hidden md:block">{activeItem?.description}</p>
-        </header>
-
-        <main className="flex-1 overflow-y-auto p-8">
-          <div className="max-w-6xl mx-auto">{children}</div>
-        </main>
+      {/* Content */}
+      <div className="w-full">
+        {children}
       </div>
     </div>
-  )
+  );
 }

@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Loader2, CheckCircle2, AlertCircle, Sparkles, Layers, Plus, Trash2 } from 'lucide-react'
 import MarketSelectionPicker from '@/components/admin/MarketSelectionPicker'
+import type { ComposeDraft } from '@/lib/aiShipping'
 
 type OddsSource = 'manual' | 'api'
 
@@ -71,11 +72,47 @@ function formatSelection(label: string, line: string) {
   return line ? `${label} ${line}` : label
 }
 
-export default function ComposeEventForm() {
+export default function ComposeEventForm({
+  initialDraft,
+  onDraftConsumed,
+}: {
+  initialDraft?: ComposeDraft | null
+  onDraftConsumed?: () => void
+} = {}) {
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [comboLegs, setComboLegs] = useState<ComboLeg[]>([{ ...EMPTY_COMBO_LEG }])
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  // Prefill from an "Ship to Compose Event" draft (e.g. from the AI Performance
+  // analyze workspace). Runs once per incoming draft, then tells the parent
+  // to clear it so it doesn't re-apply on a later re-render.
+  useEffect(() => {
+    if (!initialDraft) return
+    setForm((prev) => ({
+      ...prev,
+      sport: initialDraft.sport || prev.sport,
+      league_name: initialDraft.league_name,
+      country: initialDraft.country,
+      home_team: initialDraft.home_team,
+      away_team: initialDraft.away_team,
+      match_time: initialDraft.match_time,
+      marketCode: initialDraft.marketCode || prev.marketCode,
+      selectionLabel: initialDraft.selectionLabel,
+      line: initialDraft.line,
+      confidence: initialDraft.confidence || prev.confidence,
+      reasoning: initialDraft.reasoning,
+      combo_enabled: !!initialDraft.combo,
+      combo_side: initialDraft.combo?.side || '',
+      combo_reasoning: initialDraft.combo?.reasoning || '',
+    }))
+    if (initialDraft.combo && initialDraft.combo.legs.length > 0) {
+      setComboLegs(initialDraft.combo.legs)
+    }
+    setResult({ type: 'success', message: 'Prefilled from AI analysis \u2014 review the details below, then post.' })
+    onDraftConsumed?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialDraft])
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }))
