@@ -78,7 +78,7 @@ export default function UsersPanel() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
+        <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
       </div>
     )
   }

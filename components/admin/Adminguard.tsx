@@ -3,59 +3,44 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Loader2 } from 'lucide-react'
+import { Loader2, ShieldAlert } from 'lucide-react'
 
 const ADMIN_EMAIL = 'apexanalytics539@gmail.com'
 
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
-  const [loading, setLoading] = useState(true)
-  const [isAuthorized, setIsAuthorized] = useState(false)
+  const [status, setStatus] = useState<'checking' | 'allowed' | 'denied'>('checking')
   const router = useRouter()
 
   useEffect(() => {
-    // Check on mount
-    checkAuth()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      checkAuth()
+    checkAccess()
+    // Re-check if the user signs out / switches accounts in another tab.
+    const { data: listener } = supabase.auth.onAuthStateChange(() => {
+      checkAccess()
     })
-
-    return () => subscription.unsubscribe()
+    return () => listener.subscription.unsubscribe()
   }, [])
 
-  const checkAuth = async () => {
-    try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
-      // If no session, redirect to sign in
-      if (sessionError || !session) {
-        console.log('No session found, redirecting to sign in')
-        router.replace('/auth/signin')
-        return
-      }
+  const checkAccess = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-      const user = session.user
-      
-      // Check if the user is admin
-      if (user.email === ADMIN_EMAIL) {
-        console.log('Admin access granted for:', user.email)
-        setIsAuthorized(true)
-        setLoading(false)
-        return
-      }
-
-      // Not admin, redirect to dashboard
-      console.log('Non-admin user, redirecting to dashboard:', user.email)
-      router.replace('/dashboard')
-      
-    } catch (error) {
-      console.error('AdminGuard error:', error)
+    if (!user) {
       router.replace('/auth/signin')
+      return
     }
+
+    // ✅ Check if email matches admin email
+    if (user.email === ADMIN_EMAIL) {
+      setStatus('allowed')
+      return
+    }
+
+    setStatus('denied')
+    setTimeout(() => router.replace('/dashboard'), 1200)
   }
 
-  if (loading) {
+  if (status === 'checking') {
     return (
       <div className="min-h-screen bg-[#0a0c12] flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
@@ -63,8 +48,15 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
     )
   }
 
-  if (!isAuthorized) {
-    return null
+  if (status === 'denied') {
+    return (
+      <div className="min-h-screen bg-[#0a0c12] flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <ShieldAlert className="w-10 h-10 text-red-400 mx-auto" />
+          <p className="text-slate-300 text-sm">You don&apos;t have access to this page. Redirecting...</p>
+        </div>
+      </div>
+    )
   }
 
   return <>{children}</>
