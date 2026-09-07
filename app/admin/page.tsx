@@ -6,15 +6,12 @@ import { Loader2, RefreshCw, Archive, Eye, EyeOff, Bot, ShieldCheck, Receipt, Se
 import AdminShell, { AdminSection } from '@/components/admin/AdminShell'
 import { useAdmin } from '@/context/AdminContext'
 
-// ✅ Import with debugging - check each one
+// ✅ Components that exist
 import ComposeEventForm from '@/components/admin/ComposeEventForm'
-console.log('🔍 ComposeEventForm loaded:', !!ComposeEventForm)
-
-import UsersPanel from '@/components/admin/UserPanel'
-console.log('🔍 UsersPanel loaded:', !!UsersPanel)
-
 import AIPerformanceAnalyze from '@/components/admin/AIPerformanceAnalyze'
-console.log('🔍 AIPerformanceAnalyze loaded:', !!AIPerformanceAnalyze)
+
+// ❌ TEMPORARILY COMMENTED OUT - Fix later
+// import UsersPanel from '@/components/admin/UserPanel'
 
 import type { ComposeDraft } from '@/lib/aiShipping'
 
@@ -109,23 +106,6 @@ export default function AdminDashboard() {
     return (
       <div className="flex items-center justify-center min-h-[400px] bg-[#0a0c12]">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
-      </div>
-    )
-  }
-
-  // ✅ Safety check - if component is undefined, show error
-  if (!ComposeEventForm || !UsersPanel || !AIPerformanceAnalyze) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px] bg-[#0a0c12] text-white">
-        <div className="text-center">
-          <h2 className="text-xl font-bold text-red-400 mb-2">Component Loading Error</h2>
-          <p className="text-slate-400">One or more components failed to load.</p>
-          <p className="text-xs text-slate-500 mt-4">
-            ComposeEventForm: {!!ComposeEventForm ? '✅' : '❌'}<br />
-            UsersPanel: {!!UsersPanel ? '✅' : '❌'}<br />
-            AIPerformanceAnalyze: {!!AIPerformanceAnalyze ? '✅' : '❌'}
-          </p>
-        </div>
       </div>
     )
   }
@@ -272,7 +252,14 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {section === 'users' && <UsersPanel />}
+      {/* ✅ Users Section - Temporarily using placeholder */}
+      {section === 'users' && (
+        <div className="text-center text-slate-500 py-12 border border-dashed border-white/10 rounded-xl">
+          <Users className="w-12 h-12 mx-auto mb-3 text-slate-600" />
+          <h3 className="text-lg font-medium text-white">Users Panel</h3>
+          <p className="text-sm mt-1">User management coming soon.</p>
+        </div>
+      )}
       
       {section === 'bots' && (
         <div className="text-center text-slate-500 py-12 border border-dashed border-white/10 rounded-xl">
@@ -308,3 +295,6 @@ export default function AdminDashboard() {
     </AdminShell>
   )
 }
+
+// ✅ Import Users icon for the placeholder
+import { Users } from 'lucide-react'
