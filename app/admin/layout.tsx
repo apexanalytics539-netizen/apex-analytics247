@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
+import { supabase } from '@/lib/supabase';
 import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
+import { AdminProvider, useAdmin } from '@/context/AdminContext';
 import { 
   LogOut, 
   XCircle, 
@@ -15,80 +15,216 @@ import {
   ShieldCheck, 
   Receipt, 
   Settings,
-  Home,
   Trophy,
   Calendar,
-  BarChart3,
-  TrendingUp,
-  Star,
-  BookOpen,
-  GraduationCap,
+  BrainCircuit,
   PlusCircle,
-  Ticket,
-  BrainCircuit
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 const ADMIN_EMAILS = ['apexanalytics539@gmail.com'];
 
-// Admin navigation items
+// Admin navigation items with section mapping
 const navItems = [
-  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'Compose Event', href: '/admin?section=compose', icon: PlusCircle },
-  { name: 'Leagues', href: '/admin?section=leagues', icon: Trophy },
-  { name: 'Fixtures', href: '/admin?section=fixtures', icon: Calendar },
-  { name: 'AI Analysis', href: '/admin?section=ai', icon: BrainCircuit },
-  { name: 'Users', href: '/admin?section=users', icon: Users },
-  { name: 'Bots', href: '/admin/bots', icon: Bot },
-  { name: 'Approvals', href: '/admin/approvals', icon: ShieldCheck },
-  { name: 'Receipts', href: '/admin/receipts', icon: Receipt },
-  { name: 'Settings', href: '/admin/settings', icon: Settings },
+  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard, section: null },
+  { name: 'Compose Event', href: '/admin?section=compose', icon: PlusCircle, section: 'compose' },
+  { name: 'Leagues', href: '/admin?section=leagues', icon: Trophy, section: 'leagues' },
+  { name: 'Fixtures', href: '/admin?section=fixtures', icon: Calendar, section: 'fixtures' },
+  { name: 'AI Analysis', href: '/admin?section=ai', icon: BrainCircuit, section: 'ai' },
+  { name: 'Users', href: '/admin?section=users', icon: Users, section: 'users' },
+  { name: 'Bots', href: '/admin?section=bots', icon: Bot, section: 'bots' },
+  { name: 'Approvals', href: '/admin?section=approvals', icon: ShieldCheck, section: 'approvals' },
+  { name: 'Receipts', href: '/admin?section=receipts', icon: Receipt, section: 'receipts' },
+  { name: 'Settings', href: '/admin?section=settings', icon: Settings, section: 'settings' },
 ];
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+// ✅ Sidebar Component - uses context for navigation
+function AdminSidebarContent() {
   const router = useRouter();
   const pathname = usePathname();
-  const [loading, setLoading] = useState(true);
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  useEffect(() => {
-    async function checkAdminAccess() {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        router.push('/auth/signin');
-        return;
-      }
-
-      if (ADMIN_EMAILS.includes(user.email || '')) {
-        setIsAuthorized(true);
-      }
-      setLoading(false);
-    }
-    checkAdminAccess();
-  }, [supabase, router]);
+  const { section, navigateTo } = useAdmin();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
-    setSidebarOpen(false);
+    setMobileOpen(false);
   }, [pathname]);
 
   // Close sidebar on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSidebarOpen(false);
+      if (e.key === 'Escape') setMobileOpen(false);
     };
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, []);
+
+  // ✅ Handle navigation using context
+  const handleNavigation = (item: typeof navItems[0]) => {
+    console.log('🔍 Sidebar - Clicked:', item.name, 'section:', item.section)
+    setMobileOpen(false)
+    
+    if (item.section) {
+      // Use context to navigate
+      navigateTo(item.section as any)
+    } else {
+      router.push('/admin')
+    }
+  }
+
+  return (
+    <>
+      {/* ✅ Mobile Hamburger Button */}
+      <button
+        onClick={() => setMobileOpen(true)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-[rgba(18,23,33,0.95)] rounded-lg border border-white/10 text-white hover:bg-white/10 transition"
+        aria-label="Open sidebar"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+
+      {/* ✅ Mobile Overlay */}
+      {mobileOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* ✅ SIDEBAR */}
+      <aside 
+        className={`
+          fixed lg:sticky top-0 left-0 z-40
+          h-screen
+          bg-[#141a24] 
+          border-r border-white/5 
+          p-4 
+          flex flex-col justify-between 
+          transition-all duration-300 
+          ${sidebarOpen ? 'w-[18rem]' : 'w-[5rem]'}
+          ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}
+      >
+        {/* Logo Section */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between pb-4 border-b border-white/5">
+            <div className={`flex items-center space-x-2 ${!sidebarOpen && 'hidden'}`}>
+              <span className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="font-extrabold text-xl text-white tracking-wide">Apex Admin</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="lg:hidden p-1 rounded-lg hover:bg-white/10 text-gray-400"
+                aria-label="Close sidebar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <button 
+                onClick={() => setSidebarOpen(!sidebarOpen)} 
+                className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-white/5"
+                aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+              >
+                {sidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Navigation Links */}
+          <nav className="space-y-1 text-sm font-medium text-gray-400 overflow-y-auto max-h-[calc(100vh-200px)]">
+            {navItems.map((item) => {
+              // ✅ Check if this section is active
+              const isActive = pathname === '/admin' && 
+                ((item.section === null && !section) || 
+                 (item.section !== null && section === item.section))
+              
+              return (
+                <button
+                  key={item.name}
+                  onClick={() => handleNavigation(item)}
+                  className={`
+                    w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all 
+                    ${isActive 
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                      : 'hover:bg-white/5 hover:text-white'
+                    }
+                    ${!sidebarOpen && 'lg:justify-center lg:px-2'}
+                  `}
+                  title={!sidebarOpen ? item.name : ''}
+                >
+                  <span className={`flex items-center space-x-3 ${!sidebarOpen && 'lg:space-x-0'}`}>
+                    <item.icon className="w-4 h-4 shrink-0" />
+                    {sidebarOpen && <span>{item.name}</span>}
+                  </span>
+                </button>
+              )
+            })}
+          </nav>
+        </div>
+
+        {/* Bottom Section: Logout */}
+        <div className="space-y-1 border-t border-white/5 pt-4 text-sm font-medium text-gray-400">
+          <button 
+            onClick={() => supabase.auth.signOut()} 
+            className={`
+              w-full flex items-center px-4 py-3 rounded-lg transition 
+              hover:bg-white/5 hover:text-white text-left
+              ${!sidebarOpen && 'lg:justify-center lg:px-2'}
+            `}
+            title={!sidebarOpen ? 'Log Out' : ''}
+          >
+            <LogOut className="w-4 h-4 shrink-0" />
+            {sidebarOpen && <span className="ml-3">Log Out</span>}
+          </button>
+        </div>
+      </aside>
+    </>
+  );
+}
+
+// ✅ Main Layout - Wraps with AdminProvider
+function AdminLayoutContent({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  useEffect(() => {
+    async function checkAdminAccess() {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        console.log('🔍 Admin Layout - User:', user?.email);
+        
+        if (error) {
+          console.error('❌ Auth error:', error);
+          router.push('/auth/signin');
+          return;
+        }
+
+        if (!user) {
+          console.log('❌ No user found');
+          router.push('/auth/signin');
+          return;
+        }
+
+        if (ADMIN_EMAILS.includes(user.email || '')) {
+          console.log('✅ Admin access granted');
+          setIsAuthorized(true);
+        } else {
+          console.log('❌ Not admin, email:', user.email);
+          setIsAuthorized(false);
+        }
+      } catch (err) {
+        console.error('❌ Unexpected error:', err);
+        router.push('/auth/signin');
+      } finally {
+        setLoading(false);
+      }
+    }
+    checkAdminAccess();
+  }, [router]);
 
   if (loading) {
     return (
@@ -121,108 +257,14 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen bg-[#0b0e14] text-white flex">
+      <AdminSidebarContent />
       
-      {/* ✅ MOBILE OVERLAY */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* ✅ SIDEBAR - Responsive */}
-      <aside 
-        className={`
-          fixed lg:sticky top-0 left-0 z-50
-          h-screen bg-[#141a24] border-r border-white/5
-          transition-all duration-300 ease-in-out
-          flex flex-col
-          ${sidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64 lg:translate-x-0 lg:w-20'}
-        `}
-      >
-        {/* Logo */}
-        <div className="flex items-center justify-between px-4 py-4 border-b border-white/5 min-h-[72px]">
-          <div className={`flex items-center gap-2 ${!sidebarOpen && 'lg:hidden'}`}>
-            <span className="text-xl font-bold text-white">Apex</span>
-            <span className="text-xl font-bold text-emerald-400">Admin</span>
-          </div>
-          <div className={`flex items-center gap-2 ${sidebarOpen ? 'w-auto' : 'lg:w-full lg:justify-center'}`}>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-1.5 rounded-lg hover:bg-white/10 text-gray-400"
-              aria-label="Close sidebar"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <div className="hidden lg:block">
-              <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                <span className="text-sm font-bold text-emerald-400">A</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto p-3 space-y-1">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href || pathname?.startsWith(item.href.split('?')[0]);
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-                  transition-all duration-200
-                  ${isActive 
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                    : 'text-[#8e96a3] hover:text-white hover:bg-white/5'
-                  }
-                  ${!sidebarOpen && 'lg:justify-center lg:px-2'}
-                `}
-                title={!sidebarOpen ? item.name : ''}
-              >
-                <item.icon className="w-5 h-5 shrink-0" />
-                <span className={`${!sidebarOpen && 'lg:hidden'} truncate`}>
-                  {item.name}
-                </span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Logout Button */}
-        <div className="p-3 border-t border-white/5">
-          <button
-            onClick={() => supabase.auth.signOut()}
-            className={`
-              w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-              text-red-400 hover:bg-red-500/10 transition
-              ${!sidebarOpen && 'lg:justify-center lg:px-2'}
-            `}
-            title={!sidebarOpen ? 'Logout' : ''}
-          >
-            <LogOut className="w-5 h-5 shrink-0" />
-            <span className={`${!sidebarOpen && 'lg:hidden'}`}>Logout</span>
-          </button>
-        </div>
-      </aside>
-
       {/* ✅ MAIN CONTENT */}
       <div className="flex-1 flex flex-col min-h-screen w-full overflow-x-hidden">
         
-        {/* ✅ HEADER - Responsive */}
+        {/* ✅ HEADER */}
         <header className="sticky top-0 z-30 bg-[#141a24]/95 backdrop-blur-xl border-b border-white/5 px-3 sm:px-4 md:px-6 py-3 md:py-4 flex justify-between items-center min-h-[64px]">
           <div className="flex items-center gap-2">
-            {/* ✅ Hamburger Menu Button (Mobile only) */}
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition"
-              aria-label="Open sidebar"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-            
-            {/* Page Title - Mobile friendly */}
             <h1 className="text-base sm:text-lg md:text-xl font-bold truncate max-w-[140px] sm:max-w-[200px] md:max-w-none">
               Admin Panel
             </h1>
@@ -239,7 +281,7 @@ export default function AdminLayout({
           </div>
         </header>
 
-        {/* ✅ MAIN CONTENT AREA - Responsive padding */}
+        {/* ✅ MAIN CONTENT AREA */}
         <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 overflow-x-auto w-full">
           <div className="max-w-7xl mx-auto w-full">
             {children}
@@ -247,5 +289,13 @@ export default function AdminLayout({
         </main>
       </div>
     </div>
+  );
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <AdminProvider>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </AdminProvider>
   );
 }

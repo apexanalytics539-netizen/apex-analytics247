@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
+import { useAdmin } from '@/context/AdminContext';
 import { 
   LayoutDashboard, 
   PlusCircle, 
@@ -8,6 +9,9 @@ import {
   Calendar, 
   BrainCircuit, 
   Users,
+  Bot,
+  ShieldCheck,
+  Receipt,
   Settings
 } from 'lucide-react';
 
@@ -25,13 +29,16 @@ const navItems: { id: AdminSection; label: string; icon: any }[] = [
   { id: 'fixtures', label: 'Fixtures', icon: Calendar },
   { id: 'ai', label: 'AI Analysis', icon: BrainCircuit },
   { id: 'users', label: 'Users', icon: Users },
+  { id: 'bots', label: 'Bots', icon: Bot },
+  { id: 'approvals', label: 'Approvals', icon: ShieldCheck },
+  { id: 'receipts', label: 'Receipts', icon: Receipt },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
 export default function AdminShell({ children, active, onNavigate }: AdminShellProps) {
   return (
     <div className="w-full">
-      {/* ✅ Responsive Navigation Tabs (Horizontal scroll on mobile) */}
+      {/* ✅ Responsive Navigation Tabs */}
       <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0 mb-4 sm:mb-6">
         <div className="flex gap-1 sm:gap-2 min-w-max pb-2">
           {navItems.map((item) => {

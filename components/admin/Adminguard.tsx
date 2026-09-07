@@ -15,29 +15,51 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
     checkAccess()
     // Re-check if the user signs out / switches accounts in another tab.
     const { data: listener } = supabase.auth.onAuthStateChange(() => {
+      console.log('🔍 AdminGuard - Auth state changed, re-checking...')
       checkAccess()
     })
     return () => listener.subscription.unsubscribe()
   }, [])
 
   const checkAccess = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    try {
+      console.log('🔍 AdminGuard - Checking access...')
+      
+      const { data: { user }, error } = await supabase.auth.getUser()
+      
+      console.log('🔍 AdminGuard - User object:', user)
+      console.log('🔍 AdminGuard - User email:', user?.email)
+      
+      if (error) {
+        console.error('❌ AdminGuard - Auth error:', error)
+        router.replace('/auth/signin')
+        return
+      }
 
-    if (!user) {
+      if (!user) {
+        console.log('❌ AdminGuard - No user found, redirecting to signin')
+        router.replace('/auth/signin')
+        return
+      }
+
+      console.log('📧 AdminGuard - User email:', user.email)
+      console.log('🔑 AdminGuard - Admin email:', ADMIN_EMAIL)
+      console.log('✅ AdminGuard - Match?', user.email === ADMIN_EMAIL)
+
+      // ✅ Check if email matches admin email
+      if (user.email === ADMIN_EMAIL) {
+        console.log('✅ AdminGuard - Admin access granted for:', user.email)
+        setStatus('allowed')
+        return
+      }
+
+      console.log('❌ AdminGuard - Not admin, redirecting to dashboard')
+      setStatus('denied')
+      setTimeout(() => router.replace('/dashboard'), 1200)
+    } catch (err) {
+      console.error('❌ AdminGuard - Unexpected error:', err)
       router.replace('/auth/signin')
-      return
     }
-
-    // ✅ Check if email matches admin email
-    if (user.email === ADMIN_EMAIL) {
-      setStatus('allowed')
-      return
-    }
-
-    setStatus('denied')
-    setTimeout(() => router.replace('/dashboard'), 1200)
   }
 
   if (status === 'checking') {

@@ -22,22 +22,37 @@ export default function SignIn() {
     setError(null)
 
     try {
+      console.log('🔍 SignIn - Attempting login for:', email)
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       })
 
-      if (error) throw error
+      if (error) {
+        console.error('❌ SignIn error:', error)
+        throw error
+      }
 
       if (data.user) {
+        console.log('✅ User logged in successfully!')
+        console.log('📧 User email:', data.user.email)
+        console.log('🔑 Is admin?', data.user.email === ADMIN_EMAIL)
+        
+        // ✅ Wait a moment for session to be fully established
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
         // ✅ CHECK: Is this the admin?
         if (data.user.email === ADMIN_EMAIL) {
-          router.push('/admin') // ✅ Admin goes to admin panel
+          console.log('✅ Redirecting to /admin')
+          router.push('/admin')
         } else {
-          router.push('/dashboard') // ✅ Regular user goes to dashboard
+          console.log('✅ Redirecting to /dashboard')
+          router.push('/dashboard')
         }
       }
     } catch (error: any) {
+      console.error('❌ SignIn error:', error)
       setError(error.message)
     } finally {
       setLoading(false)

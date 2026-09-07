@@ -2,18 +2,27 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Loader2, RefreshCw, Archive, Eye, EyeOff } from 'lucide-react'
+import { Loader2, RefreshCw, Archive, Eye, EyeOff, Bot, ShieldCheck, Receipt, Settings } from 'lucide-react'
 import AdminShell, { AdminSection } from '@/components/admin/AdminShell'
-import AdminGuard from '@/components/admin/Adminguard'        // ✅ Correct case (lowercase 'g')
+import { useAdmin } from '@/context/AdminContext'
+
+// ✅ Import with debugging - check each one
 import ComposeEventForm from '@/components/admin/ComposeEventForm'
-import UsersPanel from '@/components/admin/Userpanel'         // ✅ Correct case (lowercase 'p')
+console.log('🔍 ComposeEventForm loaded:', !!ComposeEventForm)
+
+import UsersPanel from '@/components/admin/UserPanel'
+console.log('🔍 UsersPanel loaded:', !!UsersPanel)
+
 import AIPerformanceAnalyze from '@/components/admin/AIPerformanceAnalyze'
+console.log('🔍 AIPerformanceAnalyze loaded:', !!AIPerformanceAnalyze)
+
 import type { ComposeDraft } from '@/lib/aiShipping'
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
 
-function AdminDashboardContent() {
-  const [section, setSection] = useState<AdminSection>('compose')
+export default function AdminDashboard() {
+  const { section, navigateTo } = useAdmin()
+  
   const [leagues, setLeagues] = useState<any[]>([])
   const [fixtures, setFixtures] = useState<any[]>([])
   const [aiStats, setAiStats] = useState<any[]>([])
@@ -24,7 +33,7 @@ function AdminDashboardContent() {
 
   const handleShipToCompose = (draft: ComposeDraft) => {
     setComposeDraft(draft)
-    setSection('compose')
+    navigateTo('compose')
   }
 
   useEffect(() => {
@@ -94,6 +103,8 @@ function AdminDashboardContent() {
 
   const visibleFixtures = showArchived ? fixtures : activeFixtures
 
+  console.log('🔍 Page - Current section:', section)
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px] bg-[#0a0c12]">
@@ -102,14 +113,29 @@ function AdminDashboardContent() {
     )
   }
 
+  // ✅ Safety check - if component is undefined, show error
+  if (!ComposeEventForm || !UsersPanel || !AIPerformanceAnalyze) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px] bg-[#0a0c12] text-white">
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-red-400 mb-2">Component Loading Error</h2>
+          <p className="text-slate-400">One or more components failed to load.</p>
+          <p className="text-xs text-slate-500 mt-4">
+            ComposeEventForm: {!!ComposeEventForm ? '✅' : '❌'}<br />
+            UsersPanel: {!!UsersPanel ? '✅' : '❌'}<br />
+            AIPerformanceAnalyze: {!!AIPerformanceAnalyze ? '✅' : '❌'}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <AdminShell active={section} onNavigate={setSection}>
-      {/* ✅ SECTION: Compose Event */}
+    <AdminShell active={section} onNavigate={navigateTo}>
       {section === 'compose' && (
         <ComposeEventForm initialDraft={composeDraft} onDraftConsumed={() => setComposeDraft(null)} />
       )}
 
-      {/* ✅ SECTION: Leagues - Responsive Grid */}
       {section === 'leagues' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
           {leagues.length > 0 ? (
@@ -136,7 +162,6 @@ function AdminDashboardContent() {
         </div>
       )}
 
-      {/* ✅ SECTION: Fixtures - Responsive Table */}
       {section === 'fixtures' && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -165,7 +190,6 @@ function AdminDashboardContent() {
             </div>
           </div>
 
-          {/* ✅ SCROLLABLE TABLE */}
           <div className="bg-[#12141c] border border-white/5 rounded-xl overflow-x-auto">
             <table className="w-full text-xs sm:text-sm min-w-[500px]">
               <thead>
@@ -212,7 +236,6 @@ function AdminDashboardContent() {
         </div>
       )}
 
-      {/* ✅ SECTION: AI - Responsive Grid */}
       {section === 'ai' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
@@ -249,16 +272,39 @@ function AdminDashboardContent() {
         </div>
       )}
 
-      {/* ✅ SECTION: Users */}
       {section === 'users' && <UsersPanel />}
+      
+      {section === 'bots' && (
+        <div className="text-center text-slate-500 py-12 border border-dashed border-white/10 rounded-xl">
+          <Bot className="w-12 h-12 mx-auto mb-3 text-slate-600" />
+          <h3 className="text-lg font-medium text-white">Bots Management</h3>
+          <p className="text-sm mt-1">Configure and manage AI bots for predictions.</p>
+        </div>
+      )}
+      
+      {section === 'approvals' && (
+        <div className="text-center text-slate-500 py-12 border border-dashed border-white/10 rounded-xl">
+          <ShieldCheck className="w-12 h-12 mx-auto mb-3 text-slate-600" />
+          <h3 className="text-lg font-medium text-white">Approvals</h3>
+          <p className="text-sm mt-1">Review and approve pending content.</p>
+        </div>
+      )}
+      
+      {section === 'receipts' && (
+        <div className="text-center text-slate-500 py-12 border border-dashed border-white/10 rounded-xl">
+          <Receipt className="w-12 h-12 mx-auto mb-3 text-slate-600" />
+          <h3 className="text-lg font-medium text-white">Receipts</h3>
+          <p className="text-sm mt-1">View and manage payment receipts.</p>
+        </div>
+      )}
+      
+      {section === 'settings' && (
+        <div className="text-center text-slate-500 py-12 border border-dashed border-white/10 rounded-xl">
+          <Settings className="w-12 h-12 mx-auto mb-3 text-slate-600" />
+          <h3 className="text-lg font-medium text-white">Settings</h3>
+          <p className="text-sm mt-1">Configure admin panel settings.</p>
+        </div>
+      )}
     </AdminShell>
-  )
-}
-
-export default function AdminDashboard() {
-  return (
-    <AdminGuard>
-      <AdminDashboardContent />
-    </AdminGuard>
   )
 }
