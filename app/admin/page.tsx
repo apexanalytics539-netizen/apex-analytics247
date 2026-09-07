@@ -4,9 +4,9 @@ import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Loader2, RefreshCw, Archive, Eye, EyeOff } from 'lucide-react'
 import AdminShell, { AdminSection } from '@/components/admin/AdminShell'
-import AdminGuard from '@/components/admin/AdminGuard'
+import AdminGuard from '@/components/admin/Adminguard'        // ✅ Correct case (lowercase 'g')
 import ComposeEventForm from '@/components/admin/ComposeEventForm'
-import UsersPanel from '@/components/admin/UserPanel'
+import UsersPanel from '@/components/admin/Userpanel'         // ✅ Correct case (lowercase 'p')
 import AIPerformanceAnalyze from '@/components/admin/AIPerformanceAnalyze'
 import type { ComposeDraft } from '@/lib/aiShipping'
 
